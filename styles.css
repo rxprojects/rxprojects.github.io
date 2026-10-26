@@ -576,3 +576,25 @@ legend { padding: 0; margin-bottom: 22px; font: 700 23px/1.4 var(--display); col
 .trk-tg { display: inline-block; margin-top: 18px; font-size: 14px; color: var(--gold-2); }
 @media (max-width: 760px) { .trk-grid { grid-template-columns: 1fr 1fr; } }
 @media (prefers-reduced-motion: reduce) { .trk-bar i { animation: none; } }
+
+/* ---------------- announcement bar ---------------- */
+.announce { position: relative; z-index: 61; display: flex; align-items: center; justify-content: center; gap: 14px; flex-wrap: wrap; padding: 10px 48px; text-align: center; font: 600 14.5px/1.5 var(--display); color: var(--night); background: linear-gradient(90deg, var(--gold-deep), var(--gold) 30%, var(--gold-2) 50%, var(--gold) 70%, var(--gold-deep)); background-size: 200% 100%; animation: annSheen 8s linear infinite; }
+.announce a { color: var(--night); background: rgba(7,14,28,.12); padding: 4px 12px; border-radius: 999px; text-decoration: none; font-size: 13.5px; }
+.announce a:hover { background: rgba(7,14,28,.2); }
+.announce button { position: absolute; inset-inline-end: 14px; top: 50%; transform: translateY(-50%); width: 28px; height: 28px; border: 0; border-radius: 50%; background: rgba(7,14,28,.12); color: var(--night); font-size: 18px; line-height: 1; cursor: pointer; }
+@keyframes annSheen { to { background-position: -200% 0; } }
+@media (prefers-reduced-motion: reduce) { .announce { animation: none; } }
+
+/* ---------------- promo code ---------------- */
+.promo-row { margin: 0 0 18px; padding: 16px; border-radius: 16px; background: rgba(255,255,255,.03); border: 1px dashed rgba(217,181,122,.35); }
+.promo-row label { display: block; font-size: 14px; color: var(--on-dark-2); margin-bottom: 8px; }
+.promo-in { display: flex; gap: 8px; }
+.promo-in input { flex: 1; text-transform: uppercase; letter-spacing: .08em; }
+.promo-in .btn { min-height: 46px; padding: 0 22px; }
+.promo-msg { margin: 8px 0 0; font-size: 13.5px; color: var(--on-dark-3); min-height: 1em; }
+.promo-msg.good { color: #8FE0BE; }
+.promo-msg.bad { color: #F5B9B6; }
+.summary s.was { color: var(--on-dark-3); font-size: .75em; font-weight: 500; margin-inline-end: 6px; }
+.announce { position: fixed; top: 0; inset-inline: 0; }
+.has-announce .site-header { top: var(--ann-h, 42px); }
+.has-announce body { padding-top: 0; }

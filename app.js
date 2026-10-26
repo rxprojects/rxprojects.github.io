@@ -16,8 +16,12 @@
   /* ---------- basics ---------- */
   $("#year").textContent = new Date().getFullYear();
   if (DEMO) $("#demoBar").hidden = false;
-  $$("[data-cfg]").forEach(function (el) { el.textContent = CFG[el.getAttribute("data-cfg")] || "—"; });
-  $$("[data-max]").forEach(function (el) { el.textContent = CFG.MAX_UPLOAD_MB || 25; });
+  function fillCfg() {
+    $$("[data-cfg]").forEach(function (el) { el.textContent = CFG[el.getAttribute("data-cfg")] || "—"; });
+    $$("[data-max]").forEach(function (el) { el.textContent = CFG.MAX_UPLOAD_MB || 25; });
+    $$("[data-pct]").forEach(function (el) { el.textContent = "+" + Math.round((Number(CFG[el.getAttribute("data-pct")]) || 0) * 100) + "%"; });
+  }
+  fillCfg();
 
   $$(".copy").forEach(function (b) {
     b.addEventListener("click", function () {
@@ -27,13 +31,14 @@
     });
   });
 
-  (function contact() {
+  function contact() {
     var box = $("#contactLinks"), html = "", u = CFG.TELEGRAM_USERNAME || "RxProjects", link = "https://t.me/" + encodeURIComponent(u);
     html += '<a href="' + link + '" rel="noopener" target="_blank">@' + esc(u) + "</a>";
     if (CFG.EMAIL) html += '<a href="mailto:' + esc(CFG.EMAIL) + '">البريد</a>';
     box.innerHTML = html;
     $$("#tgFloat, #ctaTelegram").forEach(function (a) { a.href = link; });
-  })();
+  }
+  contact();
 
   /* ---------- pricing helpers ---------- */
   function allItems() { return [].concat(CAT.undergrad.items, CAT.postgrad.items, [CAT.custom]); }
@@ -101,9 +106,12 @@
       '<a href="#order" class="btn' + (item.featured ? " btn-gold" : "") + '" data-pick="' + esc(item.id) + '" data-level="' + level + '">اطلب</a></div>' +
       "</article>";
   }
-  ["undergrad", "postgrad"].forEach(function (lv) {
-    $("#panel-" + lv).innerHTML = '<div class="pkg-grid">' + CAT[lv].items.map(function (i) { return pkgCard(i, lv); }).join("") + "</div>";
-  });
+  function renderPkgs() {
+    ["undergrad", "postgrad"].forEach(function (lv) {
+      $("#panel-" + lv).innerHTML = '<div class="pkg-grid">' + CAT[lv].items.map(function (i) { return pkgCard(i, lv); }).join("") + "</div>";
+    });
+  }
+  renderPkgs();
 
   var tabs = $$('.tabs [role="tab"]');
   function selectTab(btn) {
@@ -124,7 +132,7 @@
   /* ---------- order form ---------- */
   var form = $("#orderForm");
   var step = 1, files = [];
-  var maxBytes = (CFG.MAX_UPLOAD_MB || 25) * 1024 * 1024;
+  function maxBytes() { return (CFG.MAX_UPLOAD_MB || 25) * 1024 * 1024; }
 
   function level() { return $('input[name="level"]:checked', form).value; }
   function selectedService() { var r = $('input[name="service"]:checked', form); return r ? findItem(r.value) : null; }
@@ -178,23 +186,23 @@
 
   function validate(n) {
     setError("");
-    if (n === 1 && !selectedService()) { setError("اختار الخدمة اللي محتاجها."); return false; }
+    if (n === 1 && !selectedService()) { setError("اختار الخدمة اللي محتاجها"); return false; }
     if (n === 2) {
       var name = $("#f-name"), tg = $("#f-tg"), uni = $("#f-uni"), dl = $("#f-deadline");
-      if (!name.value.trim()) { setError("اكتب اسمك.", name); return false; }
-      if (!/^[a-z][a-z0-9_]{4,31}$/.test(tgNorm(tg.value))) { setError("يوزر التيليجرام مش مظبوط. اكتبه زي @username (5 حروف على الأقل).", tg); return false; }
-      if (!uni.value.trim()) { setError("اكتب الجامعة والكلية.", uni); return false; }
-      if (!dl.value) { setError("حدد آخر موعد للتسليم.", dl); return false; }
+      if (!name.value.trim()) { setError("اكتب اسمك", name); return false; }
+      if (!/^[a-z][a-z0-9_]{4,31}$/.test(tgNorm(tg.value))) { setError("يوزر التيليجرام مش مظبوط، اكتبه زي @username (5 حروف على الأقل)", tg); return false; }
+      if (!uni.value.trim()) { setError("اكتب الجامعة والكلية", uni); return false; }
+      if (!dl.value) { setError("حدد آخر موعد للتسليم", dl); return false; }
       var em = $("#f-email");
-      if (em.value && !em.checkValidity()) { setError("البريد الإلكتروني مش مظبوط.", em); return false; }
+      if (em.value && !em.checkValidity()) { setError("البريد الإلكتروني مش مظبوط", em); return false; }
     }
     if (n === 3) {
       var link = $("#f-link");
-      if (!files.length && !link.value.trim()) { setError("ارفع ملف واحد على الأقل، أو حط لينك للملفات."); return false; }
-      if (link.value && !link.checkValidity()) { setError("اللينك مش مظبوط. لازم يبدأ بـ https://", link); return false; }
-      if (totalSize() > maxBytes) { setError("حجم الملفات أكبر من " + CFG.MAX_UPLOAD_MB + " ميجا. شيل الكبير منها وابعته كلينك."); return false; }
+      if (!files.length && !link.value.trim()) { setError("ارفع ملف واحد على الأقل، أو حط لينك للملفات"); return false; }
+      if (link.value && !link.checkValidity()) { setError("اللينك مش مظبوط، لازم يبدأ بـ https://", link); return false; }
+      if (totalSize() > maxBytes()) { setError("حجم الملفات أكبر من " + CFG.MAX_UPLOAD_MB + " ميجا، شيل الكبير منها وابعته كلينك"); return false; }
     }
-    if (n === 4 && !$("#agree").checked) { setError("لازم توافق على سياسات العمل الأول.", $("#agree")); return false; }
+    if (n === 4 && !$("#agree").checked) { setError("لازم توافق على سياسات العمل الأول", $("#agree")); return false; }
     return true;
   }
 
@@ -230,7 +238,7 @@
   function renderFiles() {
     var list = $("#fileList");
     if (!files.length) { list.innerHTML = ""; return; }
-    var over = totalSize() > maxBytes;
+    var over = totalSize() > maxBytes();
     list.innerHTML = files.map(function (f, i) {
       return '<li><span class="fn">' + esc(f.name) + '</span><span class="fs">' + mb(f.size) + '</span><button type="button" data-rm="' + i + '" aria-label="شيل ' + esc(f.name) + '">شيل</button></li>';
     }).join("") + '<li class="total' + (over ? " over" : "") + '"><span>الإجمالي</span><span>' + mb(totalSize()) + " من " + CFG.MAX_UPLOAD_MB + " MB</span></li>";
@@ -251,9 +259,29 @@
   ["dragleave", "drop"].forEach(function (ev) { dz.addEventListener(ev, function () { dz.classList.remove("is-over"); }); });
   dz.addEventListener("drop", function (e) { e.preventDefault(); if (e.dataTransfer) addFiles(e.dataTransfer.files); });
 
+  /* promo code */
+  var promo = null;
+  function applyPromo(q) {
+    if (!promo || q.total == null) return q;
+    var t = Math.round(q.total * (1 - promo.pct / 100));
+    var full = t < (CFG.FULL_PAYMENT_BELOW || 1000);
+    return { kind: q.kind, total: t, before: q.total, deposit: full ? t : Math.round(t * (CFG.DEPOSIT_RATE || 0.5)), full: full };
+  }
+  $("#promoBtn").addEventListener("click", function () {
+    var inp = $("#f-promo"), msg = $("#promoMsg"), code = inp.value.trim();
+    if (!code) { promo = null; msg.textContent = ""; buildSummary(); return; }
+    msg.className = "promo-msg"; msg.textContent = "بنتأكد من الكود…";
+    api({ action: "promo", code: code }).then(function (r) {
+      if (!r.ok) { promo = null; msg.className = "promo-msg bad"; msg.textContent = r.error || "الكود ده مش شغال"; }
+      else { promo = { code: r.code, pct: r.pct }; msg.className = "promo-msg good"; msg.textContent = "تم تطبيق خصم " + r.pct + "%"; }
+      buildSummary();
+    }).catch(function () { msg.className = "promo-msg bad"; msg.textContent = "مقدرناش نتأكد من الكود دلوقتي"; });
+  });
+  $("#f-promo").addEventListener("keydown", function (e) { if (e.key === "Enter") { e.preventDefault(); $("#promoBtn").click(); } });
+
   /* summary */
   function buildSummary() {
-    var item = selectedService(), express = $("#express").checked, q = quote(item, express, formSize);
+    var item = selectedService(), express = $("#express").checked, q = applyPromo(quote(item, express, formSize));
     var rows = [
       ["الخدمة", esc(item.name) + (express ? " — مستعجل" : "")],
       ["الاسم", esc($("#f-name").value)],
@@ -264,7 +292,8 @@
     ];
     var totalText;
     if (q.total == null) totalText = "بعد مراجعة الملفات";
-    else totalText = (q.kind === "from" ? "يبدأ من " : "") + fmt(q.total) + " ج.م";
+    else totalText = (q.before ? '<s class="was">' + fmt(q.before) + "</s> " : "") + (q.kind === "from" ? "يبدأ من " : "") + fmt(q.total) + " ج.م";
+    if (promo) rows.push(["كود الخصم", '<span dir="ltr">' + esc(promo.code) + "</span> · " + promo.pct + "%"]);
     rows.push(["السعر المبدئي", '<span class="sum-total">' + totalText + "</span>"]);
     $("#summary").innerHTML = rows.map(function (r) { return "<dt>" + r[0] + "</dt><dd>" + r[1] + "</dd>"; }).join("");
 
@@ -272,12 +301,12 @@
     $("#payMethods").hidden = !hasPay;
     $$(".pay-method", form).forEach(function (m) { var k = m.querySelector("[data-cfg]").getAttribute("data-cfg"); m.hidden = !CFG[k]; });
     $("#payHint").textContent = hasPay
-      ? "تقدر تدفع دلوقتي وترفع الإيصال، أو تبعت الطلب الأول ونأكدلك السعر قبل الدفع."
-      : "بيانات التحويل (InstaPay أو فودافون كاش) هتوصلك على تيليجرام مع تأكيد السعر، وبعدها ترفع الإيصال من صفحة \"تابع طلبك\".";
+      ? "تقدر تدفع دلوقتي وترفع الإيصال، أو تبعت الطلب الأول ونأكدلك السعر قبل الدفع"
+      : "بيانات التحويل (InstaPay أو فودافون كاش) هتوصلك على تيليجرام مع تأكيد السعر، وبعدها ترفع الإيصال من صفحة \"تابع طلبك\"";
     var pt = $("#payText");
-    if (q.total == null) pt.textContent = "هنبعتلك السعر النهائي بعد مراجعة الملفات، وبعدها تحوّل العربون.";
-    else if (q.full) pt.innerHTML = "الطلب أقل من " + fmt(CFG.FULL_PAYMENT_BELOW) + " ج.م، فبيتدفع كامل مقدمًا: <b>" + fmt(q.deposit) + " ج.م</b>.";
-    else pt.innerHTML = "العربون " + Math.round((CFG.DEPOSIT_RATE || 0.5) * 100) + "%: <b>" + fmt(q.deposit) + " ج.م</b>" + (q.kind === "from" ? " (مبدئيًا)" : "") + ".";
+    if (q.total == null) pt.textContent = "هنبعتلك السعر النهائي بعد مراجعة الملفات، وبعدها تحوّل العربون";
+    else if (q.full) pt.innerHTML = "الطلب أقل من " + fmt(CFG.FULL_PAYMENT_BELOW) + " ج.م، فبيتدفع كامل مقدمًا: <b>" + fmt(q.deposit) + " ج.م</b>";
+    else pt.innerHTML = "العربون " + Math.round((CFG.DEPOSIT_RATE || 0.5) * 100) + "%: <b>" + fmt(q.deposit) + " ج.م</b>" + (q.kind === "from" ? " (مبدئيًا)" : "");
   }
 
   /* submit */
@@ -301,15 +330,16 @@
   function demoReply(p) {
     var d = new Date(), yymm = String(d.getFullYear()).slice(2) + String(d.getMonth() + 1).padStart(2, "0");
     if (p.action === "order") return { ok: true, orderId: "RX-" + yymm + "-" + String(Math.floor(Math.random() * 900) + 100) };
-    if (p.action === "track") return { ok: true, orderId: p.orderId.toUpperCase(), service: "Present", status: "قيد التنفيذ", updated: d.toISOString().slice(0, 10), due: "", note: "ده رد تجريبي. الحالة الحقيقية هتظهر بعد ربط الموقع بـ Apps Script." };
+    if (p.action === "track") return { ok: true, orderId: p.orderId.toUpperCase(), service: "Present", status: "قيد التنفيذ", updated: d.toISOString().slice(0, 10), due: "", note: "ده رد تجريبي، الحالة الحقيقية هتظهر بعد ربط الموقع بـ Apps Script" };
     if (p.action === "receipt") return { ok: true };
+    if (p.action === "promo") return /^test10$/i.test(p.code) ? { ok: true, code: "TEST10", pct: 10 } : { ok: false, error: "الكود ده مش شغال" };
     return { ok: false, error: "طلب غير معروف" };
   }
 
   form.addEventListener("submit", function (e) {
     e.preventDefault();
     if (!validate(4)) return;
-    var btn = $("#submitBtn"), item = selectedService(), express = $("#express").checked, q = quote(item, express, formSize);
+    var btn = $("#submitBtn"), item = selectedService(), express = $("#express").checked, q = applyPromo(quote(item, express, formSize));
     btn.disabled = true; btn.textContent = "بنرفع ملفاتك…";
     var receiptFile = $("#f-receipt").files[0];
     Promise.all(files.map(toB64).concat(receiptFile ? [toB64(receiptFile)] : [])).then(function (encoded) {
@@ -324,15 +354,16 @@
         university: $("#f-uni").value.trim(), deadline: $("#f-deadline").value,
         size: (formSize && item.sizing ? fmt(formSize) + " " + item.sizing.label + (" — " + $("#f-pages").value.trim()).replace(/ — $/, "") : $("#f-pages").value.trim()), refStyle: $("#f-style").value,
         notes: $("#f-notes").value.trim(), filesLink: $("#f-link").value.trim(),
+        promoCode: promo ? promo.code : "",
         files: encoded, receipt: receipt
       });
     }).then(function (res) {
-      if (!res || !res.ok) throw new Error((res && res.error) || "حصلت مشكلة في الإرسال.");
+      if (!res || !res.ok) throw new Error((res && res.error) || "حصلت مشكلة في الإرسال");
       $("#orderId").textContent = res.orderId;
       $("#t-id").value = res.orderId; $("#t-tg").value = "@" + tgNorm($("#f-tg").value);
       showDone(true);
     }).catch(function (err) {
-      setError(err.message + " جرّب تاني، أو ابعتلنا على تيليجرام.");
+      setError(err.message + " جرّب تاني، أو ابعتلنا على تيليجرام");
     }).then(function () { btn.disabled = false; btn.textContent = "ابعت الطلب"; });
   });
 
@@ -341,7 +372,7 @@
     if (on) { $("#orderDone").focus(); }
   }
   $("#newOrder").addEventListener("click", function () {
-    form.reset(); files = []; renderFiles(); renderChoices(); goTo(1); showDone(false);
+    form.reset(); files = []; promo = null; $("#promoMsg").textContent = ""; renderFiles(); renderChoices(); goTo(1); showDone(false);
   });
 
   /* ---------- quick quote (hero) ---------- */
@@ -382,7 +413,18 @@
       $("#order").scrollIntoView({ behavior: "smooth" });
     });
     fill();
+    window.__rxQQ = fill;
   })();
+
+  /* ---------- live settings from the control panel ---------- */
+  window.addEventListener("rx:settings", function () {
+    CFG = window.RX_CONFIG || CFG; CAT = window.RX_CATALOG || CAT;
+    fillCfg(); contact(); renderPkgs();
+    var cur = $('input[name="service"]:checked', form);
+    renderChoices(cur ? cur.value : undefined);
+    if (window.__rxQQ) window.__rxQQ();
+    if (step === 4) buildSummary();
+  });
 
   /* ---------- tracking ---------- */
   $("#trackForm").addEventListener("submit", function (e) {
@@ -392,7 +434,7 @@
     if (!id || !tg) { out.innerHTML = '<p class="err">اكتب رقم الطلب ويوزر التيليجرام.</p>'; return; }
     out.innerHTML = "<p class=\"meta\">بندوّر على طلبك…</p>";
     api({ action: "track", orderId: id, telegram: tg }).then(function (r) {
-      if (!r.ok) { out.innerHTML = '<p class="err">' + esc(r.error || "مش لاقيين طلب بالبيانات دي. اتأكد من رقم الطلب واليوزر.") + "</p>"; return; }
+      if (!r.ok) { out.innerHTML = '<p class="err">' + esc(r.error || "مش لاقيين طلب بالبيانات دي، اتأكد من رقم الطلب واليوزر") + "</p>"; return; }
       var idx = STATUSES.indexOf(r.status);
       var pct = idx < 0 ? 0 : Math.round((idx / (STATUSES.length - 1)) * 100);
       var cell = function (k, v) { return v ? "<div><dt>" + k + "</dt><dd>" + esc(v) + "</dd></div>" : ""; };
@@ -403,21 +445,21 @@
         '<ol class="status-line">' + STATUSES.map(function (s, i) {
           return '<li class="' + (i < idx ? "done" : i === idx ? "now" : "") + '"' + (i === idx ? ' aria-current="step"' : "") + ">" + s + "</li>";
         }).join("") + "</ol>" +
-        (r.note ? '<p class="trk-note">' + esc(r.note) + "</p>" : "") +
+        (r.note ? '<p class="trk-note">' + esc(window.RX_NODOT ? window.RX_NODOT(r.note) : r.note) + "</p>" : "") +
         '<a class="trk-tg" href="https://t.me/' + esc(CFG.TELEGRAM_USERNAME || "") + '" target="_blank" rel="noopener">عندك سؤال عن طلبك؟ كلمنا على تيليجرام</a>';
-    }).catch(function () { out.innerHTML = '<p class="err">مقدرناش نوصل للسيرفر دلوقتي. جرّب كمان شوية.</p>'; });
+    }).catch(function () { out.innerHTML = '<p class="err">مقدرناش نوصل للسيرفر دلوقتي، جرّب كمان شوية</p>'; });
   });
   $("#trackThis").addEventListener("click", function () { setTimeout(function () { $("#trackForm").requestSubmit(); }, 300); });
 
   $("#receiptForm").addEventListener("submit", function (e) {
     e.preventDefault();
     var msg = $("#receiptMsg"), f = $("#r-file").files[0], id = $("#r-id").value.trim(), tg = tgNorm($("#r-tg").value);
-    if (!id || !tg || !f) { msg.style.color = "var(--err)"; msg.textContent = "املا الخانات الثلاثة."; return; }
+    if (!id || !tg || !f) { msg.style.color = "var(--err)"; msg.textContent = "املا الخانات الثلاثة"; return; }
     msg.style.color = "var(--muted)"; msg.textContent = "بنرفع الإيصال…";
     toB64(f).then(function (rc) { return api({ action: "receipt", orderId: id, telegram: tg, receipt: rc }); })
       .then(function (r) {
-        if (!r.ok) throw new Error(r.error || "مش لاقيين الطلب.");
-        msg.style.color = "var(--ok)"; msg.textContent = "الإيصال وصل. هنأكد الدفع ونحدّث حالة طلبك.";
+        if (!r.ok) throw new Error(r.error || "مش لاقيين الطلب");
+        msg.style.color = "var(--ok)"; msg.textContent = "الإيصال وصل، هنأكد الدفع ونحدّث حالة طلبك";
         e.target.reset();
       }).catch(function (err) { msg.style.color = "var(--err)"; msg.textContent = err.message; });
   });

@@ -16,14 +16,17 @@
 
   /* hero title: split into words, last 3 words in gold */
   var title = $("[data-split]");
-  if (title) {
-    var words = title.textContent.trim().split(/\s+/);
-    title.innerHTML = words.map(function (w, i) {
+  function splitTitle(t) {
+    var esc = function (x) { return x.replace(/[&<>"']/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]; }); };
+    var words = t.textContent.trim().split(/\s+/);
+    t.classList.remove("is-in");
+    t.innerHTML = words.map(function (w, i) {
       var gold = i >= words.length - 3 ? " gold" : "";
-      return '<span class="w' + gold + '"><span style="--i:' + i + '">' + w + "</span></span>";
+      return '<span class="w' + gold + '"><span style="--i:' + i + '">' + esc(w) + "</span></span>";
     }).join(" ");
-    requestAnimationFrame(function () { setTimeout(function () { title.classList.add("is-in"); }, 60); });
+    requestAnimationFrame(function () { setTimeout(function () { t.classList.add("is-in"); }, 60); });
   }
+  if (title) { splitTitle(title); window.RX_SPLIT = splitTitle; }
 
   /* reveal on scroll */
   var io = "IntersectionObserver" in window ? new IntersectionObserver(function (entries) {
